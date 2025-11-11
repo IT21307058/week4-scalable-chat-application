@@ -54,8 +54,20 @@ class SocketService {
             }
           }
 
-          await pub.publish("MESSAGES", JSON.stringify({ message, userId }));
-          console.log("Message Published to Redis ✅", message, "userId:", userId);
+          // fetch user name and publish full payload
+          let userName = "Unknown";
+          try {
+            if (userId) {
+              const user = await prismaClient.user.findUnique({ where: { id: userId }, select: { name: true } });
+              userName = user?.name || "Unknown";
+            }
+          } catch (err) {
+            console.warn("Failed to fetch user for message", err);
+          }
+
+          const payload = { message, userId, userName, createdAt: new Date().toISOString() };
+          await pub.publish("MESSAGES", JSON.stringify(payload));
+          console.log("Message Published to Redis ✅", message, "userId:", userId, "userName:", userName);
         } catch (err) {
           console.error("Failed to publish message ❌", err);
         }

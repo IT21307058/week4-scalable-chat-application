@@ -5,7 +5,7 @@ export async function POST(req: NextRequest) {
     const { email, password, name } = await req.json();
 
     // Call the backend auth service
-    const response = await fetch('http://localhost:8000/auth/register', {
+    const response = await fetch('http://localhost:8000/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, name }),

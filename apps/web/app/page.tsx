@@ -62,7 +62,12 @@ export default function Page() {
         ) : (
           messages.map((msg, idx) => (
             <div key={idx} className={classes.messageItem + ' msg-item'}>
-              <div className={classes.messageBubble + ' msg-bubble'}>{msg}</div>
+              <div className={classes.messageBubble + ' msg-bubble'}>
+                {/* Render as: "<userName> send <message> message" */}
+                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--primary)', marginBottom: 6 }}>
+                  {`${msg.userName} send ${msg.message} message`}
+                </div>
+              </div>
             </div>
           ))
         )}

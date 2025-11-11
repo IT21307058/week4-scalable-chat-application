@@ -1,7 +1,9 @@
+
 import { Server } from "socket.io";
 import { Redis } from 'ioredis'
 import prismaClient from "./prisma.js";
 import { produceMessage } from "./kafka.js";
+import jwt from "jsonwebtoken";
 
 const pub = new Redis({
   host: "valkey-191bb006-bhanukalakshitha22-c780.h.aivencloud.com",
@@ -38,11 +40,22 @@ class SocketService {
 
     io.on("connect", (socket) => {
       console.log(`New Socket Connected`, socket.id);
-      socket.on("event:message", async ({ message }: { message: string }) => {
+      socket.on("event:message", async ({ message, token }: { message: string, token?: string }) => {
         try {
           console.log("New Message Rec.", message);
-          await pub.publish("MESSAGES", JSON.stringify({ message }));
-          console.log("Message Published to Redis ✅", message);
+
+          let userId: string | null = null;
+          if (token) {
+            try {
+              const payload: any = jwt.verify(token, process.env.JWT_SECRET || "dev-secret");
+              userId = payload?.sub || null;
+            } catch (err) {
+              console.warn("Invalid token provided for message, continuing as anonymous");
+            }
+          }
+
+          await pub.publish("MESSAGES", JSON.stringify({ message, userId }));
+          console.log("Message Published to Redis ✅", message, "userId:", userId);
         } catch (err) {
           console.error("Failed to publish message ❌", err);
         }

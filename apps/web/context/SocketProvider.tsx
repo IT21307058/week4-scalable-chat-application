@@ -26,13 +26,12 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     const [socket, setSocket] = useState<Socket>();
     const [messages, setMessages] = useState<string[]>([]);
 
-    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiZjYxY2UyNS1hN2I2LTQzNzQtYTg4NS03MmRlNzVlYjIwNGMiLCJlbWFpbCI6ImJoYW51a2FAZ21haWwuY29tIiwiaWF0IjoxNzYyNjkwMzcxLCJleHAiOjE3NjMyOTUxNzF9.0NwSnOivAe2nun48RsWPGmcMY1HXzWg44O4iGg3-dOo";
-
     const sendMessage: ISocketContext["sendMessage"] = useCallback(
         (msg) => {
             console.log("Send Message", msg);
             if (socket) {
-                socket.emit('event:message', { message: msg , token});
+                const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+                socket.emit('event:message', { message: msg, token });
             }
         },
         [socket]

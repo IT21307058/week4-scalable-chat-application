@@ -42,42 +42,37 @@ export default function Page() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100">
-      {/* Header */}
-      <div className="bg-indigo-600 text-white p-4 flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Chat Application</h1>
-        <div className="flex items-center gap-4">
-          <span>Welcome, {user.name || user.email}</span>
+    <div className={`app-root ${classes.chatContainer}`}>
+      <header className="chat-header">
+        <div className="chat-title">Chat Application</div>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <span style={{ color: 'rgba(255,255,255,0.95)' }}>Welcome, {user.name || user.email}</span>
           <button
             onClick={handleLogout}
-            className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded text-white"
+            style={{ background: '#ef4444', color: 'white', padding: '8px 12px', borderRadius: 8, border: 'none' }}
           >
             Logout
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* Chat Container */}
-      <div className="flex-1 overflow-auto p-4">
-        <div className="space-y-2">
-          <h2 className="text-lg font-semibold mb-4">Messages</h2>
-          {messages.length === 0 ? (
-            <p className="text-gray-500">No messages yet. Start chatting!</p>
-          ) : (
-            messages.map((msg, idx) => (
-              <div key={idx} className="bg-white p-3 rounded shadow">
-                {msg}
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+      <main className={classes.messages + ' messages-wrap'}>
+        {messages.length === 0 ? (
+          <div style={{ color: 'var(--muted)' }}>No messages yet. Start chatting!</div>
+        ) : (
+          messages.map((msg, idx) => (
+            <div key={idx} className={classes.messageItem + ' msg-item'}>
+              <div className={classes.messageBubble + ' msg-bubble'}>{msg}</div>
+            </div>
+          ))
+        )}
+      </main>
 
-      {/* Input Area */}
-      <div className="bg-white border-t p-4">
-        <div className="flex gap-2">
+      <div className="chat-input-area chat-input-area">
+        <div className="chat-input-row chat-input-row">
           <input
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            type="text"
+            className={classes.chatInput + ' chat-input-row-input'}
             onChange={(e) => setMessage(e.target.value)}
             value={message}
             placeholder="Type your message..."
@@ -89,7 +84,7 @@ export default function Page() {
             }}
           />
           <button
-            className="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700"
+            className={classes.button + ' send-button'}
             onClick={(e) => {
               e.preventDefault();
               sendMessage(message);

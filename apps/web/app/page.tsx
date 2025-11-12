@@ -1,20 +1,45 @@
 'use client'
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSocket } from '../context/SocketProvider';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { useTodayMessageStats, TodayMessageStats } from '../context/useTodayMessageStats';
 import classes from './page.module.css';
 
 export default function Page() {
   const { sendMessage, messages } = useSocket();
   const { user, logout } = useAuth();
   const router = useRouter();
+  const { fetchStats } = useTodayMessageStats();
   const [message, setMessage] = useState("");
+  const [todayStats, setTodayStats] = useState<TodayMessageStats | null>(null);
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
 
   const handleLogout = () => {
     logout();
     router.push('/login');
   };
+
+  const loadTodayStats = async () => {
+    if (!user) return;
+    setIsLoadingStats(true);
+    try {
+      const stats = await fetchStats();
+      console.log('Stats:', stats);
+      setTodayStats(stats);
+    } catch (error) {
+      console.error('Failed to load today stats:', error);
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      loadTodayStats();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   if (!user) {
     return (
@@ -41,15 +66,49 @@ export default function Page() {
     );
   }
 
+  console.log('Today Stats:', todayStats);
+
   return (
     <div className={`app-root ${classes.chatContainer}`}>
       <header className="chat-header">
         <div className="chat-title">Chat Application</div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          {todayStats && (
+            <div style={{ 
+              background: 'rgba(99, 102, 241, 0.15)', 
+              padding: '8px 16px', 
+              borderRadius: 8,
+              border: '1px solid rgba(99, 102, 241, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8
+            }}>
+              <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.9rem' }}>
+                Today's Messages: <strong style={{ color: '#a5b4fc' }}>{ todayStats ? todayStats.messageCount : 0}</strong>
+              </span>
+              <button
+                onClick={loadTodayStats}
+                disabled={isLoadingStats}
+                style={{ 
+                  background: 'rgba(99, 102, 241, 0.3)', 
+                  color: 'white', 
+                  padding: '4px 8px', 
+                  borderRadius: 4, 
+                  border: 'none',
+                  cursor: isLoadingStats ? 'not-allowed' : 'pointer',
+                  fontSize: '0.8rem',
+                  opacity: isLoadingStats ? 0.6 : 1
+                }}
+                title="Refresh message count"
+              >
+                {isLoadingStats ? '...' : '↻'}
+              </button>
+            </div>
+          )}
           <span style={{ color: 'rgba(255,255,255,0.95)' }}>Welcome, {user.name || user.email}</span>
           <button
             onClick={handleLogout}
-            style={{ background: '#ef4444', color: 'white', padding: '8px 12px', borderRadius: 8, border: 'none' }}
+            style={{ background: '#ef4444', color: 'white', padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer' }}
           >
             Logout
           </button>

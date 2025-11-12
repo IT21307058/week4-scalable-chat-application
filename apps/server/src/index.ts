@@ -4,9 +4,22 @@ import { startMessageConsumer } from "./services/kafka.js";
 import prisma from "./services/prisma.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { ApolloServer } from "@apollo/server";
+import { typeDefs } from "./graphql/schema.js";
+import { resolvers } from "./graphql/resolvers.js";
+import { handleGraphQLRequest } from "./graphql/handler.js";
 // import PrismaClient  from "@prisma/client";
 
+// CORS headers helper
+function setCORSHeaders(res: http.ServerResponse) {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.setHeader("Access-Control-Max-Age", "86400"); // 24 hours
+}
+
 function sendJSON(res: http.ServerResponse, status: number, payload: any) {
+    setCORSHeaders(res);
     res.writeHead(status, { "Content-Type": "application/json" });
     res.end(JSON.stringify(payload));
 }
@@ -56,7 +69,23 @@ async function init() {
     startMessageConsumer();
     const socketService = new SocketService();
 
+    // Initialize Apollo Server with context function
+    const apolloServer = new ApolloServer({
+        typeDefs,
+        resolvers,
+    });
+
+    await apolloServer.start();
+
     const httpServer = http.createServer(async (req, res) => {
+        // Handle CORS preflight requests
+        if (req.method === "OPTIONS") {
+            setCORSHeaders(res);
+            res.writeHead(200);
+            res.end();
+            return;
+        }
+
         // Basic health
         if (req.method === "GET" && req.url === "/") {
             return sendJSON(res, 200, { status: "ok" });
@@ -70,7 +99,13 @@ async function init() {
             return await handleLogin(req, res);
         }
 
+        // GraphQL endpoint
+        if (req.method === "POST" && req.url === "/graphql") {
+            return await handleGraphQLRequest(req, res, apolloServer);
+        }
+
         // Not handled: fallthrough (socket.io will use same server)
+        setCORSHeaders(res);
         res.writeHead(404);
         res.end();
     });
